@@ -6,15 +6,14 @@
       results
       (let [proto (first remaining)
             [funs remain] (split-with (complement symbol?)
-                                      (rest remaining))]
+                                      (rest remaining))
+            evalled-funs (mapcat (fn [[fun-args form]]
+                                   [(vec fun-args) (eval form)])
+                                 funs)]
         ;; omit protos with nil funs
-        (recur (if (some (comp nil? second) funs) 
+        (recur (if (some nil? evalled-funs) 
                  results
-                 (conj results (vec (concat [proto] 
-                                            (mapcat (fn [[fun-args form]]
-                                                      [(vec fun-args)
-                                                       (eval form)])
-                                                    funs)))))
+                 (conj results (vec (concat [proto] evalled-funs))))
                remain)))))
 
 (defmacro dynamic-reify [defs]
@@ -34,5 +33,6 @@
                                                       ~args#)))
                                       (partition 2 funs#))))
                        ~protosg#))]
+           (clojure.pprint/pprint reification#)
            (eval `(let [~'~protosg# ~'~protosg#]
                     (reify ~@reification#))))))))
